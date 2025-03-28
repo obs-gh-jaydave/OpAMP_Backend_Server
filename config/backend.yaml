@@ -1,0 +1,8 @@
+opamp:
+  listen_address: ":4320"
+  tls:
+    cert_file: "config/certs/server.crt"
+    key_file: "config/certs/server.key"
+
+api:
+  listen_address: ":8080"
