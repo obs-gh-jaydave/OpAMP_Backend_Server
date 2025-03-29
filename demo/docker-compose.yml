@@ -1,0 +1,51 @@
+version: '3'
+volumes:
+  log_data:  # Define the volume here at the top level
+
+services:
+  opamp-backend:
+    build: ..
+    ports:
+      - "4321:4320"
+      - "8081:8080"
+    environment:
+      - AUTH_TOKEN=your-secure-token-here
+    volumes:
+      - ../config:/app/config
+    networks:
+      - opamp-net
+    # Update the healthcheck to use a more reliable endpoint or remove it
+    # Remove the healthcheck entirely since we don't have a reliable health endpoint
+
+  opamp-agent:
+    build: ./supervisor-collector
+    ports:
+      - "4317:4317"
+    environment:
+      - COLLECTOR_CONFIG=/config/collector-config.yaml
+    volumes:
+      - ./supervisor-collector/config:/config
+      - log_data:/logs 
+    depends_on:
+      - opamp-backend  # Simple dependency without health check
+    networks:
+      - opamp-net
+    restart: on-failure
+
+  sample-service:
+    build: ./sample-service
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./supervisor-collector/config:/config
+      - log_data:/logs 
+    command: sh -c "./sample-service 2>&1 | tee /logs/sample-service.log" 
+    depends_on:
+      - opamp-agent
+    networks:
+      - opamp-net
+
+networks:
+  opamp-net:
+    driver: bridge
+    attachable: true

@@ -1,0 +1,51 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+  filelog:
+    include: ["/logs/*.log"]
+    start_at: beginning
+    operators:
+      - type: regex_parser
+        regex: '^(?P<timestamp>\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) (?P<message>.*)$'
+
+exporters:
+  otlphttp/observe:
+    endpoint: "https://134414420961.collect.observeinc.com/v2/otel"
+    headers:
+      authorization: "Bearer ds1NVl9knaNFnDnK5qnD:92y36aSeH6aSORB8xRw0xpgiMK8Kb6l4"
+
+processors:
+  batch:
+
+extensions:
+  opamp:
+    instance_uid: "01HFPQ7Z5G8YPJM6QRNCT9KD8N"
+    capabilities:
+      reports_effective_config: true
+    server:
+      ws:
+        endpoint: "wss://opamp-backend:4320/v1/opamp"
+        headers:
+          Authorization: "Secret-Key your-secure-token-here"
+        tls:
+          insecure: true
+
+service:
+  extensions: [opamp]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/observe]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/observe]
+    logs: 
+      receivers: [otlp, filelog]
+      processors: [batch]
+      exporters: [otlphttp/observe]

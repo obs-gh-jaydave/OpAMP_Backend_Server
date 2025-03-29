@@ -2,60 +2,85 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
-
-	"opamp-backend/internal/config"
+	"opamp-backend/internal/common"
 )
 
 // AgentLogLevelUpdateRequest represents the request payload to update an agent's log level.
-// It now includes additional metadata (e.g. IP address and location) for selecting the target agent.
 type AgentLogLevelUpdateRequest struct {
-	AgentID   string `json:"agent_id"`   // Unique identifier for the agent.
-	IPAddress string `json:"ip_address"` // Optional: IP address of the agent.
-	Location  string `json:"location"`   // Optional: Physical location or region.
+	AgentID   string `json:"agent_id"`
+	IPAddress string `json:"ip_address"`
+	Location  string `json:"location"`
 	LogLevel  string `json:"log_level"`
 }
 
-// HandleAgentLogLevelUpdate updates the log level for a specific agent.
-// It retrieves the current collector configuration, applies the log level change, and propagates the update.
 func HandleAgentLogLevelUpdate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Received agent log level update request")
+
 		var req AgentLogLevelUpdateRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			log.Printf("Failed to parse request body: %v", err)
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
+
+		log.Printf("Agent log level update request for agent %s to level %s", req.AgentID, req.LogLevel)
 
 		// Validate log level.
 		switch req.LogLevel {
 		case "debug", "info", "warn", "error":
 			// Valid log level.
 		default:
+			log.Printf("Invalid log level: %s", req.LogLevel)
 			http.Error(w, "Invalid log level", http.StatusBadRequest)
 			return
 		}
 
-		// Retrieve current collector configuration.
-		currentConfig, err := config.GetCurrentCollectorConfig()
+		// Get the server instance
+		srv := common.GetServerInstance()
+		if srv == nil {
+			log.Printf("Server not initialized")
+			http.Error(w, "Server not initialized", http.StatusInternalServerError)
+			return
+		}
+
+		// Update IP address and location information if available
+		// This requires modifying your Agent struct to include these fields
+		if req.IPAddress != "" || req.Location != "" {
+			agent, exists := srv.GetAgent(req.AgentID)
+			if exists {
+				if req.IPAddress != "" {
+					// If your Agent struct has an IP field:
+					agent.IP = req.IPAddress
+					log.Printf("Updated IP address for agent %s to %s", req.AgentID, req.IPAddress)
+				}
+				if req.Location != "" {
+					// If your Agent struct has a Location field:
+					agent.Location = req.Location
+					log.Printf("Updated location for agent %s to %s", req.AgentID, req.Location)
+				}
+			}
+		}
+
+		// Before calling UpdateAgentLogLevel:
+		log.Printf("Attempting to update log level for agent %s to %s", req.AgentID, req.LogLevel)
+		err := srv.UpdateAgentLogLevel(req.AgentID, req.LogLevel)
 		if err != nil {
-			http.Error(w, "Failed to retrieve current configuration", http.StatusInternalServerError)
+			log.Printf("Failed to update agent log level: %v", err)
+			http.Error(w, "Failed to update agent log level: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		// Update configuration YAML with the new log level.
-		updatedConfig, err := config.UpdateLogLevelInConfig(currentConfig, req.LogLevel)
-		if err != nil {
-			http.Error(w, "Failed to update configuration", http.StatusInternalServerError)
-			return
-		}
-
-		// Propagate the updated configuration to the specified agent.
-		if err := config.PropagateConfigToAgent(req.AgentID, updatedConfig); err != nil {
-			http.Error(w, "Failed to propagate configuration", http.StatusInternalServerError)
-			return
-		}
-
+		log.Printf("Agent log level updated successfully for %s", req.AgentID)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Agent log level updated successfully"))
+		response := map[string]string{
+			"status":    "success",
+			"agent_id":  req.AgentID,
+			"log_level": req.LogLevel,
+			"message":   "Agent log level updated successfully",
+		}
+		json.NewEncoder(w).Encode(response)
 	}
 }

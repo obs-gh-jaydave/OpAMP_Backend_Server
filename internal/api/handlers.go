@@ -39,7 +39,6 @@ func HandleConfigUpdate() http.HandlerFunc {
 		fmt.Printf("Received configuration update with hash: %x\n", configHash[:])
 		fmt.Printf("Configuration content (YAML):\n%s\n", string(yamlConfig))
 
-		// Simplified implementation - just acknowledge receipt of configuration
 		fmt.Printf("In a real implementation, this would be sent to OpAMP agents\n")
 
 		w.WriteHeader(http.StatusOK)
