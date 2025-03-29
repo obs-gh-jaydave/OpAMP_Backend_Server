@@ -47,3 +47,27 @@ bin/
 # Certificate files (if you want to exclude them)
 config/certs/*.key
 config/certs/*.crt
+demo/supervisor-collector/certs/*.crt
+
+# Test environment files
+test-results/
+coverage.out
+*.test
+
+# VS Code settings 
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Additional ignores for macOS
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Go workspace file
+go.work
+
+# Debug files
+__debug_bin

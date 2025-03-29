@@ -8,7 +8,6 @@ import (
 )
 
 func TestAuthMiddleware_Unauthorized(t *testing.T) {
-	// Set a test token.
 	os.Setenv("AUTH_TOKEN", "test-secret")
 	authToken = os.Getenv("AUTH_TOKEN")
 
@@ -25,7 +24,6 @@ func TestAuthMiddleware_Unauthorized(t *testing.T) {
 }
 
 func TestAuthMiddleware_Authorized(t *testing.T) {
-	// Set a test token.
 	os.Setenv("AUTH_TOKEN", "test-secret")
 	authToken = os.Getenv("AUTH_TOKEN")
 
