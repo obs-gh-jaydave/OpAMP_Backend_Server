@@ -126,7 +126,7 @@ exporters:
   otlphttp/observe:
     endpoint: "https://134414420961.collect.observeinc.com/v2/otel"
     headers:
-      authorization: "Bearer ds1NVl9knaNFnDnK5qnD:92y36aSeH6aSORB8xRw0xpgiMK8Kb6l4"
+      authorization: "Bearer ${OBSERVE_TOKEN}"
 
 processors:
   batch:
